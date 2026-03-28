@@ -122,6 +122,8 @@ class SQLRepairEnvironment:
         self._last_query_result: Optional[QueryResult] = None
         self._last_error: Optional[str] = None
         self._last_action: Optional[str] = None
+        # Populated by grader on submit_query — used to build Reward correctly
+        self._last_grader_result: dict = {}
 
     # ── reset ────────────────────────────────────────────────────────────────
 
@@ -147,6 +149,7 @@ class SQLRepairEnvironment:
         self._last_query_result = None
         self._last_error   = None
         self._last_action  = None
+        self._last_grader_result = {}
 
         # Populate the database
         self._task_module.setup_database(self._conn)
@@ -203,24 +206,40 @@ class SQLRepairEnvironment:
             feedback    += " [Max steps reached — episode ended]"
 
         # ── Accumulate reward ────────────────────────────────────────────────
-        self._total_reward = round(min(1.0, max(0.0, self._total_reward + step_reward * 0.5)), 4)
+        # FIX: removed the erroneous *0.5 dampening — step_reward is already 0‑1
+        self._total_reward = round(min(1.0, max(0.0, self._total_reward + step_reward)), 4)
         self._action_history.append(
             f"Step {self._step_count}: {action.action_type.value} → {feedback[:80]}"
         )
 
         # ── Build return objects ─────────────────────────────────────────────
+        gr = self._last_grader_result  # populated by _handle_submit_query
         obs    = self._build_observation(feedback=feedback)
         reward = Reward(
             step_reward        = round(step_reward, 4),
             total_reward       = self._total_reward,
-            correctness_score  = self._last_query_result.row_count / 10 if self._last_query_result and self._last_query_result.success else 0.0,
-            data_quality_score = 0.0,
+            # FIX: use grader breakdown for correctness — fallback to row-count heuristic
+            correctness_score  = round(gr.get("breakdown", {}).get("exact", 0.0)
+                                       + gr.get("breakdown", {}).get("partial_rows",
+                                           gr.get("breakdown", {}).get("partial", 0.0)), 4)
+                                 if gr else (
+                                     min(1.0, self._last_query_result.row_count / 10)
+                                     if self._last_query_result and self._last_query_result.success
+                                     else 0.0
+                                 ),
+            # FIX: pull data_quality_score from grader result instead of hardcoding 0.0
+            data_quality_score = round(
+                sum(gr.get("data_quality", gr.get("schema_scores", {})).values())
+                if gr else 0.0, 4
+            ),
             efficiency_penalty = max(0.0, (self._step_count / self._max_steps) - 0.5),
             feedback           = feedback,
             query_executes     = self._last_query_result.success if self._last_query_result else False,
-            schema_correct     = False,
-            output_matches     = self._done and step_reward >= 0.8,
-            task_complete      = self._done and step_reward >= 0.8,
+            # FIX: schema_correct derived from grader schema score instead of always False
+            schema_correct     = bool(gr.get("schema_scores", {}).get("rename_qty", 0.0) > 0)
+                                 if gr else False,
+            output_matches     = bool(gr.get("output_matches", False)) if gr else False,
+            task_complete      = bool(gr.get("output_matches", False)) if gr else False,
         )
 
         return StepResult(
@@ -255,12 +274,14 @@ class SQLRepairEnvironment:
     def _handle_submit_query(self, action: Action):
         if not action.query:
             self._last_error = "No query provided for submit_query action."
+            self._last_grader_result = {}
             return -0.05, "No query string provided."
 
         self._last_query_result = _run_query_safe(self._conn, action.query)
 
         if not self._last_query_result.success:
             self._last_error = self._last_query_result.error_message
+            self._last_grader_result = {}
             return -0.05, f"Query error: {self._last_query_result.error_message}"
 
         # Run grader
@@ -273,16 +294,19 @@ class SQLRepairEnvironment:
                 self._max_steps, self._cleaning_actions
             )
 
-        score = result["score"]
+        # FIX: store grader result so Reward construction can use it
+        self._last_grader_result = result
+
+        score    = result["score"]
         feedback = result["feedback"]
 
-        # Map score to step reward
-        step_reward = score  # 0.0 – 1.0
+        # step_reward == grader score (0.0 – 1.0)
+        step_reward = score
 
         # Mark done if task fully solved
         if result.get("output_matches", False):
             self._done = True
-            self._total_reward = score
+            self._total_reward = score   # pin total to exact grader score
 
         return step_reward, feedback
 
