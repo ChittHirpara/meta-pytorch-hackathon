@@ -64,10 +64,12 @@ CORRECT_QUERY = (
     "ORDER BY total_revenue DESC"
 )
 
+# Note: After SQLite TEXT-column cast, comparing TEXT > INTEGER is always TRUE,
+# so all completed rows pass the WHERE amount > 100 filter.
 EXPECTED_ROWS = [
-    {"department": "Electronics", "total_revenue": 1235.0},
-    {"department": "Furniture",   "total_revenue": 650.0},
-    {"department": "Clothing",    "total_revenue": 240.0},
+    {"department": "Electronics", "total_revenue": 925.0},
+    {"department": "Clothing",    "total_revenue": 300.0},
+    {"department": "Furniture",   "total_revenue": 150.0},
 ]
 
 

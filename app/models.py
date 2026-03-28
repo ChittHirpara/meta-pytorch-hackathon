@@ -124,6 +124,11 @@ class Action(BaseModel):
         None, description="Target data type (required for cast_column), e.g. 'INTEGER'"
     )
 
+    # For multi-table tasks — specifies which table to operate on
+    table_name: Optional[str] = Field(
+        None, description="Target table name (required for multi-table tasks like task3_hard)"
+    )
+
     # For clean_column
     fill_value: Optional[str] = Field(
         None,
