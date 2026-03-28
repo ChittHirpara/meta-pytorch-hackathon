@@ -40,7 +40,7 @@ from openai import OpenAI
 
 API_BASE_URL   = os.environ.get("API_BASE_URL",   "https://api.openai.com/v1")
 MODEL_NAME     = os.environ.get("MODEL_NAME",      "gpt-4o-mini")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY",  "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY",  os.environ.get("HF_TOKEN", ""))
 ENV_BASE_URL   = os.environ.get("ENV_BASE_URL",    "http://localhost:7860")
 
 TEMPERATURE     = 0.0
@@ -124,6 +124,7 @@ CRITICAL RULES:
 - NEVER call submit_query if any column still has null_count > 0.
 - NEVER call submit_query if column names do not match what the query references.
 - Fix ALL data quality issues before submitting the query.
+- NEVER use a column name in an action if it does not match EXACTLY the name in the current schema. For example, if it's currently named 'amt', do not try to drop_nulls from 'amount' until you have actually renamed it.
 - Only output ONE action per response. The JSON must be on its own line.
 """
 
@@ -409,7 +410,8 @@ def run_episode(task_id: str) -> Dict[str, Any]:
                 print(f"  ✅ Episode complete at step {step}.")
                 break
 
-            time.sleep(0.3)
+            # FIX: Sleep to avoid Gemini Free Tier 429 Rate Limits
+            time.sleep(4.0)
 
     else:
         # ── Single-phase CoT agent for task1_easy and task2_medium ──────────
@@ -442,7 +444,8 @@ def run_episode(task_id: str) -> Dict[str, Any]:
                 print(f"  ✅ Episode complete at step {step}.")
                 break
 
-            time.sleep(0.3)
+            # FIX: Sleep to avoid Gemini Free Tier 429 Rate Limits
+            time.sleep(4.0)
 
     if not done:
         print(f"  ⏱ Reached max steps ({max_steps}).")
@@ -516,7 +519,7 @@ def main():
     args = parser.parse_args()
 
     if not OPENAI_API_KEY:
-        print("⚠  OPENAI_API_KEY is not set. LLM calls may fail.")
+        print("⚠  OPENAI_API_KEY (or HF_TOKEN) is not set. LLM calls may fail.")
 
     tasks_to_run = TASKS if args.task == "all" else [args.task]
 

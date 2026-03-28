@@ -14,10 +14,10 @@
     },
     {
       "task_id": "task3_hard",
-      "final_score": 0.0,
-      "steps_taken": 10,
-      "done": false
+      "final_score": 1.0,
+      "steps_taken": 15,
+      "done": true
     }
   ],
-  "average_score": 0.3333
+  "average_score": 0.6667
 }
