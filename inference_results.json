@@ -1,0 +1,23 @@
+{
+  "results": [
+    {
+      "task_id": "task1_easy",
+      "final_score": 1.0,
+      "steps_taken": 1,
+      "done": true
+    },
+    {
+      "task_id": "task2_medium",
+      "final_score": 0.0,
+      "steps_taken": 10,
+      "done": true
+    },
+    {
+      "task_id": "task3_hard",
+      "final_score": 0.0,
+      "steps_taken": 10,
+      "done": false
+    }
+  ],
+  "average_score": 0.3333
+}

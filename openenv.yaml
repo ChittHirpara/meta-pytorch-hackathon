@@ -1,0 +1,141 @@
+name: sql-repair-environment
+version: "1.0.0"
+description: >
+  An OpenEnv environment where AI agents learn to fix broken SQL queries
+  and clean dirty tabular data. Covers three real-world data engineering
+  scenarios across easy, medium, and hard difficulty levels.
+
+author: openenv-hackathon
+tags:
+  - sql
+  - data-cleaning
+  - data-engineering
+  - openenv
+
+endpoints:
+  reset:    POST /reset
+  step:     POST /step
+  state:    GET  /state
+  validate: GET  /validate
+
+action_space:
+  type: discrete
+  actions:
+    - name: submit_query
+      description: Submit a corrected SQL query string
+      required_fields: [query]
+    - name: drop_nulls
+      description: Drop rows where a specific column is null
+      required_fields: [column_name]
+      optional_fields: [table_name]
+    - name: drop_duplicates
+      description: Remove duplicate rows from a table
+      required_fields: []
+      optional_fields: [table_name]
+    - name: rename_column
+      description: Rename a column in a table
+      required_fields: [column_name, new_column_name]
+      optional_fields: [table_name]
+    - name: cast_column
+      description: Cast a column to a new data type (INTEGER, REAL, TEXT)
+      required_fields: [column_name, cast_to]
+      optional_fields: [table_name]
+    - name: clean_column
+      description: Fill or drop nulls in a column
+      required_fields: [column_name]
+      optional_fields: [table_name, fill_value]
+    - name: done
+      description: Signal that the agent has finished the task
+      required_fields: []
+
+observation_space:
+  type: structured
+  fields:
+    task_id:
+      type: string
+    difficulty:
+      type: string
+      enum: [easy, medium, hard]
+    goal:
+      type: string
+    instructions:
+      type: string
+    tables:
+      type: array
+    broken_query:
+      type: string
+    last_action_error:
+      type: string
+      nullable: true
+    last_query_result:
+      type: object
+      nullable: true
+    step_count:
+      type: integer
+    max_steps:
+      type: integer
+    current_score:
+      type: float
+    done:
+      type: boolean
+
+reward_space:
+  type: float
+  range: [-1.0, 1.0]
+  fields:
+    step_reward:
+      range: [-1.0, 1.0]
+    total_reward:
+      range: [0.0, 1.0]
+    correctness_score:
+      range: [0.0, 1.0]
+    data_quality_score:
+      range: [0.0, 1.0]
+    efficiency_penalty:
+      range: [0.0, 1.0]
+
+tasks:
+  - task_id: task1_easy
+    name: Fix SQL Syntax Error
+    difficulty: easy
+    max_steps: 5
+    description: >
+      A single 'employees' table exists with clean data. The provided SQL query
+      contains a keyword typo (SELCT) and a column name typo (deprtment).
+      The agent must submit a corrected query that returns the right rows.
+    grader: deterministic
+    score_range: [0.0, 1.0]
+    action_types: [submit_query, done]
+
+  - task_id: task2_medium
+    name: Clean Data and Fix Query Logic
+    difficulty: medium
+    max_steps: 10
+    description: >
+      An 'orders' table has null customer_name values, duplicate rows,
+      a misnamed column (amt instead of amount), and a non-numeric value.
+      The SQL query has a wrong WHERE threshold and wrong column reference.
+    grader: deterministic
+    score_range: [0.0, 1.0]
+    action_types: [drop_nulls, drop_duplicates, rename_column, cast_column, submit_query, done]
+
+  - task_id: task3_hard
+    name: Multi-Table Join Repair
+    difficulty: hard
+    max_steps: 15
+    description: >
+      Three tables (customers, products, transactions) with schema errors,
+      null values, duplicates, and a complex SQL query with wrong JOIN keys,
+      wrong aggregation (AVG vs SUM), wrong HAVING threshold, and wrong ORDER BY.
+    grader: deterministic
+    score_range: [0.0, 1.0]
+    action_types: [drop_nulls, drop_duplicates, rename_column, cast_column, submit_query, done]
+
+infrastructure:
+  port: 7860
+  framework: fastapi
+  language: python
+  python_version: "3.11"
+  runtime: uvicorn
+  max_memory_mb: 512
+  max_vcpu: 2
