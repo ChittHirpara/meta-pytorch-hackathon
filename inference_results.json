@@ -8,16 +8,16 @@
     },
     {
       "task_id": "task2_medium",
-      "final_score": 0.0,
-      "steps_taken": 10,
+      "final_score": 1.0,
+      "steps_taken": 5,
       "done": true
     },
     {
       "task_id": "task3_hard",
       "final_score": 1.0,
-      "steps_taken": 15,
+      "steps_taken": 6,
       "done": true
     }
   ],
-  "average_score": 0.6667
+  "average_score": 1.0
 }
