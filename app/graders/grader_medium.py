@@ -1,6 +1,7 @@
 """
 Grader — Task 2 (Medium)
 Scores both data cleaning actions AND the final query.
+Returns a score between 0.0 and 1.0.
 """
 
 import sqlite3
@@ -25,32 +26,57 @@ def _normalize_rows(rows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 def grade_data_quality(conn: sqlite3.Connection) -> Dict[str, float]:
+    """
+    Check how well the agent cleaned the data.
+    Returns sub-scores for each cleaning task.
+    """
     scores = {}
 
+    # 1. Was 'amt' renamed to 'amount'?
     try:
         conn.execute("SELECT amount FROM orders LIMIT 1")
         scores["rename_column"] = 0.15
     except Exception:
         scores["rename_column"] = 0.0
 
+    # 2. Were null customer_names dropped?
     try:
         cursor = conn.execute("SELECT COUNT(*) FROM orders WHERE customer_name IS NULL")
-        scores["drop_nulls"] = 0.15 if cursor.fetchone()[0] == 0 else 0.0
+        null_count = cursor.fetchone()[0]
+        scores["drop_nulls"] = 0.15 if null_count == 0 else 0.0
     except Exception:
         scores["drop_nulls"] = 0.0
 
+    # 3. Were duplicates removed?
     try:
         cursor = conn.execute("SELECT COUNT(*) FROM orders")
         total = cursor.fetchone()[0]
+        # After dedup + null drop, should have <= 8 rows
         scores["drop_duplicates"] = 0.10 if total <= 8 else 0.0
     except Exception:
         scores["drop_duplicates"] = 0.0
 
+    # 4. Was amount cast to numeric AND bad rows removed?
+    # Fix: only award credit if:
+    #   (a) the 'amount' column exists (was renamed from 'amt')
+    #   (b) no non-numeric values remain (the 'N/A' row was removed/cast)
     try:
-        conn.execute("SELECT amount FROM orders WHERE amount NOT GLOB '*[^0-9.]*' OR amount IS NULL LIMIT 1")
-        scores["cast_column"] = 0.10
+        # Check that no non-numeric string values remain in amount column
+        cursor = conn.execute(
+            """SELECT COUNT(*) FROM orders
+               WHERE CAST(amount AS REAL) IS NULL
+               AND amount IS NOT NULL"""
+        )
+        bad_count = cursor.fetchone()[0]
+        # Also verify at least one numeric row exists (column was actually cast)
+        cursor2 = conn.execute(
+            "SELECT COUNT(*) FROM orders WHERE CAST(amount AS REAL) IS NOT NULL"
+        )
+        numeric_count = cursor2.fetchone()[0]
+        # Award credit only if no bad rows remain AND numeric rows exist
+        scores["cast_column"] = 0.10 if (bad_count == 0 and numeric_count > 0) else 0.0
     except Exception:
-        scores["cast_column"] = 0.05
+        scores["cast_column"] = 0.0
 
     return scores
 
@@ -62,9 +88,25 @@ def grade(
     max_steps: int,
     cleaning_actions_taken: List[str],
 ) -> Dict[str, Any]:
+    """
+    Grade Task 2 submission.
+
+    Scoring breakdown:
+      +0.15  renamed 'amt' → 'amount'
+      +0.15  dropped null customer_names
+      +0.10  dropped duplicate rows
+      +0.10  handled bad 'N/A' amount value
+      +0.15  query executes without error
+      +0.20  partial row match on query output
+      +0.15  exact match on query output
+      -0.05  per wasted step beyond step 4
+    """
+
+    # ── Data quality scores ──────────────────────────────────────────────────
     dq = grade_data_quality(conn)
     data_score = sum(dq.values())
 
+    # ── Query execution ──────────────────────────────────────────────────────
     success, rows, error = run_query(conn, submitted_query)
     if not success:
         efficiency_penalty = min(0.20, max(0, step_count - 4) * 0.05)
@@ -80,6 +122,7 @@ def grade(
 
     execute_score = 0.15
 
+    # ── Row matching ─────────────────────────────────────────────────────────
     expected_norm = _normalize_rows(EXPECTED_ROWS)
     actual_norm   = _normalize_rows(rows)
 
@@ -88,10 +131,11 @@ def grade(
     partial_score = 0.20 * (matched / total) if total > 0 else 0.0
     exact_score   = 0.15 if actual_norm == expected_norm else 0.0
 
-    wasted  = max(0, step_count - 4)
+    # ── Efficiency penalty ───────────────────────────────────────────────────
+    wasted = max(0, step_count - 4)
     penalty = min(0.20, wasted * 0.05)
 
-    raw         = data_score + execute_score + partial_score + exact_score - penalty
+    raw = data_score + execute_score + partial_score + exact_score - penalty
     final_score = round(max(0.0, min(1.0, raw)), 4)
 
     if exact_score > 0:
