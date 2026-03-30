@@ -19,7 +19,7 @@ COPY pyproject.toml README.md ./
 COPY app/ ./app/
 COPY server/ ./server/
 
-RUN pip install --no-cache-dir --upgrade pip \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir . \
     && pip install --no-cache-dir openenv-core>=0.2.0 \
     && python -m uvicorn --version
