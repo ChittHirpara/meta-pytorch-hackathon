@@ -36,4 +36,4 @@ python_functions = ["test_*"]
 
 [project.urls]
 "Homepage" = "https://huggingface.co/spaces/chitt-hirpara/sql-repair-env"
-"Repository" = "https://huggingface.co/spaces/chitt-hirpara/sql-repair-env"
+"Repository" = "https://github.com/ChittHirpara/meta-pytorch-hackathon.git"
