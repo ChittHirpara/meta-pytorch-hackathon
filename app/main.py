@@ -16,9 +16,10 @@ import os
 from contextlib import asynccontextmanager
 from typing import Dict, Optional
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.environment import SQLRepairEnvironment
 from app.models import (
@@ -150,23 +151,45 @@ def list_tasks():
     }
 
 
+class ResetRequest(BaseModel):
+    """Optional JSON body for /reset."""
+    task_id: Optional[str] = "task1_easy"
+
+
 @app.post("/reset", response_model=Observation, summary="Start a new episode")
-def reset(
-    task_id: str = Query(
-        default="task1_easy",
+async def reset(
+    request: Request,
+    task_id: Optional[str] = Query(
+        default=None,
         description="Task to run: task1_easy | task2_medium | task3_hard",
-    )
+    ),
 ):
     """
     Reset the environment and start a fresh episode.
 
-    - `task_id`: which task to load (task1_easy, task2_medium, task3_hard)
+    Accepts task_id from:
+      - Query param:  POST /reset?task_id=task1_easy
+      - JSON body:    POST /reset  {"task_id": "task1_easy"}
+      - Plain POST:   POST /reset  (defaults to task1_easy)
 
-    Returns an **Observation** containing the database state, broken query, and goal.
+    Returns an Observation containing the database state, broken query, and goal.
     """
     env = get_env()
+
+    # Try to get task_id from JSON body if not in query param
+    resolved_task_id = task_id
+    if resolved_task_id is None:
+        try:
+            body = await request.json()
+            resolved_task_id = body.get("task_id", "task1_easy")
+        except Exception:
+            resolved_task_id = "task1_easy"
+
+    if not resolved_task_id:
+        resolved_task_id = "task1_easy"
+
     try:
-        obs = env.reset(task_id=task_id)
+        obs = env.reset(task_id=resolved_task_id)
         return obs
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
