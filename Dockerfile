@@ -15,18 +15,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # ── Install Python dependencies ───────────────────────────────────────────
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt \
-    && pip install --no-cache-dir openenv-core>=0.2.0 || true
+COPY pyproject.toml README.md ./
+COPY app/ ./app/
+COPY server/ ./server/
 
-# ── Copy project files ────────────────────────────────────────────────────
-COPY app/           ./app/
-COPY server/        ./server/
-COPY openenv.yaml   .
-COPY inference.py   .
-COPY README.md      .
-COPY pyproject.toml .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir . \
+    && pip install --no-cache-dir openenv-core>=0.2.0 \
+    && python -m uvicorn --version
+
+COPY openenv.yaml .
+COPY inference.py .
 
 # ── Create non-root user (HF Spaces requirement) ──────────────────────────
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
