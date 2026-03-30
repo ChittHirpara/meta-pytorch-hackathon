@@ -39,7 +39,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7860/')"
 
 # ── Start server ──────────────────────────────────────────────────────────
-# ── Start server ──────────────────────────────────────────────────────────
 # Using 'python -m uvicorn' is the most reliable way to ensure the uvicorn 
 # module is found within the Python environment, avoiding PATH issues.
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
