@@ -1,1 +1,0 @@
-{"action_type": "submit_query", "query": "SELECT id, name, department, salary FROM employees WHERE salary > 70000 ORDER BY salary DESC"}
