@@ -1,0 +1,127 @@
+---
+title: Sql Repair Env
+emoji: 📉
+colorFrom: red
+colorTo: pink
+sdk: docker
+pinned: false
+license: mit
+short_description: OpenEnv SQL Repair Environment — AI agents fix broken SQL qu
+---
+
+Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+
+# 🚀 OpenEnv SQL Repair Environment
+
+[![Tests](https://img.shields.io/badge/tests-49%2F49%20passing-brightgreen)](#)
+[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-311/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.1-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker)](#)
+
+A fully **OpenEnv-compliant reinforcement learning environment** designed to test, evaluate, and train AI agents navigating the complexities of real-world Data Engineering.
+
+Unlike simple text-to-SQL benchmarks, the SQL Repair Environment challenges agents to deal with **dirty, malformed, and buggy tabular data.** To succeed, agents cannot just write a `SELECT` statement — they must iteratively investigate the schema, utilize atomic data-cleaning operations, drop nulls, cast columns, and manage table relationships *before* finalizing their complex queries.
+
+This is a complete, production-ready environment built for **HuggingFace Spaces** and advanced **Agentic RL benchmarks**.
+
+---
+
+## 🌟 Key Features
+
+*   **Multi-Step Data Engineering**: Agents interact with isolated, ephemeral SQLite engines. They have access to 7 environment actions (`submit_query`, `drop_nulls`, `drop_duplicates`, `rename_column`, `cast_column`, `clean_column`, `done`).
+*   **Three Tiered Tasks**: Covering everything from syntax typos to multi-table JOINs layered with duplicate records and schema anomalies.
+*   **Intelligent, Deterministic Graders**: Instead of a binary pass/fail score, the grading engine performs deep validation. It gives **Data Quality Scores**, partial credit for row matches, and extracts an **Efficiency Penalty** based on the number of wasted operations.
+*   **Chain-of-Thought (CoT) Baseline Agent**: Includes a state-of-the-art inference orchestrator (`inference.py`) capable of tackling tasks using a dynamically managed "Data Cleaner" and "SQL Writer" two-phase architecture.
+*   **Fast & Headless**: The `uvicorn` architecture supports parallel evaluation, zero-downtime resets, and fully deterministic step tracking.
+
+---
+
+## 🏗 Architecture & Stack 
+
+```text
+Backend: FastAPI, Pydantic, Python 3.11
+Database: Ephemeral in-memory SQLite instances
+Agent Inference: OpenAI SDK (Compatible with GPT-4, Gemini Flash, Claude)
+Testing: Pytest (49/49 passing integration suite)
+Deployment: Docker (Exposed on internal :7860)
+```
+
+---
+
+## 🎯 Task Breakdown
+
+The environment currently hosts 3 progressively difficult tasks:
+
+| Complexity | Tables | Data Anomalies | SQL Logic Errors | Max Allowed Steps |
+| :--- | :---: | :--- | :--- | :---: |
+| **Easy** (`task1`) | 1 | Clean dataset | Typo `SELCT`, wrong target column name | 5 |
+| **Medium** (`task2`) | 1 | Nulls, duplicates, bad column name (`amt`), invalid numeric types (`"N/A"`) | Wrong `WHERE` thresholds | 10 |
+| **Hard** (`task3`) | 3 | Multi-table nulls, duplicates in mapping tables, misspelled FK columns | Wrong aggregations (`AVG` instead of `SUM`), missing `ORDER BY` and `WHERE` criteria | 15 |
+
+---
+
+## 🚀 Getting Started
+
+### 1. Run via Docker (Recommended)
+The environment is containerized for instant deployment. 
+```bash
+# Build the image
+docker build -t sql-repair-env .
+
+# Run the environment on port 7860
+docker run -p 7860:7860 sql-repair-env
+```
+
+### 2. Run Locally
+Ensure you have Python 3.11+ installed.
+```bash
+pip install -r requirements.txt
+
+# Boot the FastAPI Server
+uvicorn app.main:app --host 0.0.0.0 --port 7860
+```
+
+### 3. Verify Health
+To check the container health or see the OpenEnv standard `validate` endpoint:
+```bash
+curl http://localhost:7860/validate
+```
+
+---
+
+## 🤖 Running the Baseline Agent
+
+We provide a highly advanced Inference Script (`inference.py`) to demonstrate how an LLM agent navigates the environment. It utilizes a **Two-Phase Architecture** (cleaning vs. writing) and **Chain-of-Thought** reasoning to dynamically act until `max_steps` are exhausted or the data is clean.
+
+```bash
+# Export your preferred LLM Keys
+export MODEL_NAME="gemini-2.0-flash"
+export API_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
+export OPENAI_API_KEY="your-api-key"
+
+# Run the agent against all Tasks
+python inference.py --task all
+```
+
+**Baseline Performance:**
+The provided Gemini agent scores a perfect **1.0 average** across all three tasks, completely automating the Data Engineering fixes in under 6 steps per episode.
+
+---
+
+## 🧪 Testing
+
+The codebase maintains strict reliability with a full Pytest integration suite that covers the HTTP endpoints, memory allocation, and the deterministic nature of the internal Graders.
+
+```bash
+python -m pytest tests/test_env.py -v
+```
+*`Result: 49 passed in 0.74s`*
+
+---
+
+## 📖 API Spec (OpenEnv Standard)
+
+*   `POST /reset?task_id={task_id}` — Initializes a new in-memory SQLite environment, returning the observation state, instructions, and schemas.
+*   `POST /step` — Receives a JSON action payload containing the type (e.g., `rename_column`) and parameters. Mutates the SQLite memory and returns a dense `reward` dictionary and new `observation`.
+*   `GET /state` — Gives a highly detailed structural breakdown of all tables (row counts, null counts, datatypes).
+*   `GET /validate` — Validates environment compliance for Hugging Face Spaces integration.
