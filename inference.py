@@ -410,6 +410,7 @@ def run_episode(task_id: str) -> Dict[str, Any]:
     if not done:
         print(f"  ⏱ Reached max steps ({max_steps}).")
 
+    final_score = round(max(0.001, min(0.999, final_score)), 4)
     print(f"[END] score={final_score}")
 
     return {

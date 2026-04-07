@@ -207,7 +207,7 @@ class SQLRepairEnvironment:
 
         # ── Accumulate reward ────────────────────────────────────────────────
         # FIX: removed the erroneous *0.5 dampening — step_reward is already 0‑1
-        self._total_reward = round(min(1.0, max(0.0, self._total_reward + step_reward)), 4)
+        self._total_reward = round(min(0.999, max(0.001, self._total_reward + step_reward)), 4)
         self._action_history.append(
             f"Step {self._step_count}: {action.action_type.value} → {feedback[:80]}"
         )
@@ -306,7 +306,7 @@ class SQLRepairEnvironment:
         # Mark done if task fully solved
         if result.get("output_matches", False):
             self._done = True
-            self._total_reward = score   # pin total to exact grader score
+            self._total_reward = round(max(0.001, min(0.999, score)), 4)   # pin total to exact grader score
 
         return step_reward, feedback
 
