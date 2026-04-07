@@ -88,7 +88,7 @@ def grade(
     success, rows, error = run_query(conn, submitted_query)
     if not success:
         penalty = min(0.20, max(0, step_count - 6) * 0.05)
-        final   = round(max(0.0, schema_score - penalty), 4)
+        final   = round(max(0.01, min(0.99, schema_score - penalty)), 4)
         return {
             "score": final,
             "feedback": f"Schema/cleaning score: {schema_score:.2f}. Query failed: {error}",
@@ -112,7 +112,7 @@ def grade(
     penalty = min(0.20, wasted * 0.05)
 
     raw   = schema_score + execute_score + partial + exact - penalty
-    final = round(max(0.0, min(1.0, raw)), 4)
+    final = round(max(0.01, min(0.99, raw)), 4)
 
     if exact > 0:
         feedback = "Outstanding! All tables cleaned and complex query is perfect."

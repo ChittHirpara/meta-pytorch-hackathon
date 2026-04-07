@@ -110,7 +110,7 @@ def grade(
     success, rows, error = run_query(conn, submitted_query)
     if not success:
         efficiency_penalty = min(0.20, max(0, step_count - 4) * 0.05)
-        final_score = round(max(0.0, data_score - efficiency_penalty), 4)
+        final_score = round(max(0.01, min(0.99, data_score - efficiency_penalty)), 4)
         return {
             "score": final_score,
             "feedback": f"Data cleaning partial credit: {data_score:.2f}. Query failed: {error}",
@@ -136,7 +136,7 @@ def grade(
     penalty = min(0.20, wasted * 0.05)
 
     raw = data_score + execute_score + partial_score + exact_score - penalty
-    final_score = round(max(0.0, min(1.0, raw)), 4)
+    final_score = round(max(0.01, min(0.99, raw)), 4)
 
     if exact_score > 0:
         feedback = "Excellent! Data cleaned and query output matches perfectly."

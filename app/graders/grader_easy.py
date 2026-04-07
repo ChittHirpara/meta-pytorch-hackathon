@@ -46,7 +46,7 @@ def grade(
     efficiency_penalty = min(0.15, wasted_steps * 0.05)
 
     raw_score   = execute_score + partial_score + exact_score - efficiency_penalty
-    final_score = round(max(0.0, min(1.0, raw_score)), 4)
+    final_score = round(max(0.01, min(0.99, raw_score)), 4)
 
     if exact_score > 0:
         feedback = "Perfect! Query output matches exactly."
