@@ -26,14 +26,19 @@ from typing import Any, Dict, List, Optional
 import httpx
 from openai import OpenAI
 
+import os
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 
-API_BASE_URL  = os.environ.get("API_BASE_URL",   "https://api.openai.com/v1")
-MODEL_NAME    = os.environ.get("MODEL_NAME",      "gpt-4o-mini")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://api.openai.com/v1")
+MODEL_NAME = os.getenv("MODEL_NAME", "gpt-4o-mini")
+HF_TOKEN = os.getenv("HF_TOKEN")
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
+
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-ENV_BASE_URL  = os.environ.get("ENV_BASE_URL",   "http://localhost:7860")
+ENV_BASE_URL  = os.environ.get("ENV_BASE_URL", "http://localhost:7860")
 
 TEMPERATURE = 0.0
 MAX_TOKENS  = 1024
@@ -46,7 +51,7 @@ TASKS = ["task1_easy", "task2_medium", "task3_hard"]
 # OpenAI client
 # ---------------------------------------------------------------------------
 
-client = OpenAI(api_key=OPENAI_API_KEY, base_url=API_BASE_URL)
+client = OpenAI(api_key=HF_TOKEN or OPENAI_API_KEY, base_url=API_BASE_URL)
 
 # ---------------------------------------------------------------------------
 # Environment HTTP helpers
