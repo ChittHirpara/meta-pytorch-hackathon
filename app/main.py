@@ -40,11 +40,11 @@ _env: Optional[SQLRepairEnvironment] = None
 async def lifespan(app: FastAPI):
     global _env
     _env = SQLRepairEnvironment()
-    print("✅ SQL Repair Environment initialized.")
+    print("[Success] SQL Repair Environment initialized.")
     yield
     if _env:
         _env.close()
-    print("🛑 Environment closed.")
+    print("[Closed] Environment closed.")
 
 
 # ---------------------------------------------------------------------------
