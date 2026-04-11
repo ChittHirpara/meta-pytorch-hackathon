@@ -1,0 +1,9 @@
+Metadata-Version: 2.4
+Name: triage-x
+Version: 1.0.0
+Summary: TRIAGE-X: SRE Incident Response Benchmark for OpenEnv
+Author: Mohit Mudgil
+Requires-Dist: openai>=1.2.0
+Requires-Dist: requests>=2.31.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: openenv-core>=0.2.0

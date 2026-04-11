@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+server/__init__.py
+server/app.py
+triage_x.egg-info/PKG-INFO
+triage_x.egg-info/SOURCES.txt
+triage_x.egg-info/dependency_links.txt
+triage_x.egg-info/entry_points.txt
+triage_x.egg-info/requires.txt
+triage_x.egg-info/top_level.txt

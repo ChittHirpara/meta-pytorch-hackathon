@@ -1,0 +1,3 @@
+[console_scripts]
+server = server.app:main
+start = server.app:main

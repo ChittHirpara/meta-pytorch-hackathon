@@ -1,0 +1,68 @@
+{
+    "easy_signal_noise": [
+      {
+        "action": "inspect_service",
+        "target": "api_gateway",
+        "reason": "Initial diagnosis: inspect the most unhealthy service."
+      },
+      {
+        "action": "rollback_deploy",
+        "target": "api_gateway",
+        "reason": "Rollback suspected bad deploy on the true root cause."
+      }
+    ],
+    "medium_hidden_dependency": [
+      {
+        "action": "inspect_service",
+        "target": "database_replica",
+        "reason": "Investigate likely upstream dependency causing payment failures."
+      },
+      {
+        "action": "rollback_deploy",
+        "target": "database_replica",
+        "reason": "Recover hidden root cause at the database layer."
+      },
+      {
+        "action": "restart_service",
+        "target": "database_replica",
+        "reason": "Stabilize the database replica after rollback."
+      },
+      {
+        "action": "throttle_queue",
+        "target": "payment_worker",
+        "reason": "Reduce backlog after upstream recovery."
+      },
+      {
+        "action": "restart_service",
+        "target": "payment_worker",
+        "reason": "Recover downstream worker if still unhealthy."
+      }
+    ],
+    "hard_multi_incident": [
+      {
+        "action": "inspect_service",
+        "target": "api_gateway",
+        "reason": "Diagnose the most critical service first."
+      },
+      {
+        "action": "rollback_deploy",
+        "target": "api_gateway",
+        "reason": "Rollback the primary bad deploy causing widespread impact."
+      },
+      {
+        "action": "throttle_queue",
+        "target": "payment_worker",
+        "reason": "Reduce payment queue overload to contain cascading damage."
+      },
+      {
+        "action": "scale_service",
+        "target": "notification_queue",
+        "reason": "Scale notification processing to drain backlog."
+      },
+      {
+        "action": "restart_service",
+        "target": "api_gateway",
+        "reason": "Optional stabilization if gateway remains critically degraded."
+      }
+    ]
+  }

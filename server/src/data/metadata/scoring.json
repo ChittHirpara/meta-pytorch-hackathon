@@ -1,0 +1,22 @@
+{
+  "weights": {
+    "system_stability": 0.30,
+    "customer_harm_reduction": 0.25,
+    "root_cause_resolution": 0.25,
+    "action_efficiency": 0.10,
+    "budget_utilisation": 0.05,
+    "harmful_action_avoidance": 0.05
+  },
+  "thresholds": {
+    "full_score_system_health": 0.85,
+    "pass_system_health": 0.70,
+    "full_score_customer_impact": 15,
+    "pass_customer_impact": 35
+  },
+  "penalties": {
+    "cascade_triggered": -0.15,
+    "budget_exhausted": -0.10,
+    "max_steps_reached": -0.05,
+    "silent_real_alert": -0.05
+  }
+}

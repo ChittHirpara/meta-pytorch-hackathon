@@ -1,0 +1,46 @@
+{
+  "services": [
+    {
+      "name": "auth_service",
+      "display_name": "Auth Service",
+      "description": "Handles user authentication and session token generation. Upstream dependency for most services.",
+      "criticality": "high",
+      "color": "#6366f1"
+    },
+    {
+      "name": "api_gateway",
+      "display_name": "API Gateway",
+      "description": "Primary entry point for all API requests. Routes, load-balances, and rate-limits traffic.",
+      "criticality": "critical",
+      "color": "#ef4444"
+    },
+    {
+      "name": "payment_worker",
+      "display_name": "Payment Worker",
+      "description": "Processes financial transactions asynchronously. Failure here has direct revenue impact.",
+      "criticality": "critical",
+      "color": "#f59e0b"
+    },
+    {
+      "name": "notification_queue",
+      "display_name": "Notification Queue",
+      "description": "Manages asynchronous delivery of push notifications and emails.",
+      "criticality": "medium",
+      "color": "#10b981"
+    },
+    {
+      "name": "database_replica",
+      "display_name": "Database Replica",
+      "description": "Read replica of the primary database. Serves analytical and high-read workloads.",
+      "criticality": "high",
+      "color": "#8b5cf6"
+    },
+    {
+      "name": "analytics_pipeline",
+      "display_name": "Analytics Pipeline",
+      "description": "Batch processing pipeline for business intelligence and reporting.",
+      "criticality": "low",
+      "color": "#64748b"
+    }
+  ]
+}

@@ -1,44 +1,44 @@
-# ── Base image ────────────────────────────────────────────────────────────
-FROM public.ecr.aws/docker/library/python:3.11-slim
+# Use Debian slim that ships both Node 20 and allows easy Python 3 install
+FROM node:20-bookworm-slim
 
-# ── Metadata ─────────────────────────────────────────────────────────────
-LABEL maintainer="openenv-hackathon"
-LABEL description="OpenEnv SQL Repair Environment"
-LABEL version="1.0.0"
-
-# ── System dependencies ───────────────────────────────────────────────────
+# ── System deps ───────────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+    python3 python3-pip python3-venv python-is-python3 && \
+    # Create manual symlinks as a triple-safety measure
+    ln -sf /usr/bin/python3 /usr/bin/python && \
+    ln -sf /usr/bin/python3 /usr/local/bin/python && \
+    rm -rf /var/lib/apt/lists/*
 
-# ── Working directory ─────────────────────────────────────────────────────
-WORKDIR /app
+# ── Environment ───────────────────────────────────────────────────────────────
+ENV PORT=7860
+ENV PATH="/usr/src/app:/usr/src/app/server:${PATH}"
+ENV PYTHONPATH="/usr/src/app"
 
-# ── Install Python dependencies ───────────────────────────────────────────
-COPY pyproject.toml README.md ./
-COPY app/ ./app/
-COPY server/ ./server/
+# ── App directory ─────────────────────────────────────────────────────────────
+WORKDIR /usr/src/app
 
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
-    && pip install --no-cache-dir . \
-    && pip install --no-cache-dir openenv-core>=0.2.0 \
-    && python -m uvicorn --version
+# ── Python inference deps ─────────────────────────────────────────────────────
+COPY pyproject.toml ./
+COPY uv.lock ./
+COPY inference.py ./
+COPY python ./
+RUN chmod +x inference.py python && \
+    pip3 install --no-cache-dir --break-system-packages .
 
+# ── Node server deps ──────────────────────────────────────────────────────────
+COPY server/package*.json ./server/
+WORKDIR /usr/src/app/server
+RUN npm install
+
+# Copy all server files
+COPY server/ .
+
+# Copy openenv spec to root
+WORKDIR /usr/src/app
 COPY openenv.yaml .
-COPY inference.py .
 
-# ── Create non-root user (HF Spaces requirement) ──────────────────────────
-RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
-USER appuser
-
-# ── Expose port (HF Spaces default) ──────────────────────────────────────
+# ── Runtime ───────────────────────────────────────────────────────────────────
 EXPOSE 7860
 
-# ── Health check ──────────────────────────────────────────────────────────
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7860/')"
-
-# ── Start server ──────────────────────────────────────────────────────────
-# Using 'python -m uvicorn' is the most reliable way to ensure the uvicorn 
-# module is found within the Python environment, avoiding PATH issues.
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+WORKDIR /usr/src/app/server
+CMD [ "npm", "start" ]

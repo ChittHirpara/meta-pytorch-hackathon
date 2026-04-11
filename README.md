@@ -1,127 +1,146 @@
 ---
-title: Sql Repair Env
-emoji: 📉
-colorFrom: red
-colorTo: pink
+title: NetPulse SRE Benchmark
+colorFrom: blue
+colorTo: indigo
 sdk: docker
+app_port: 7860
 pinned: false
-license: mit
-short_description: OpenEnv SQL Repair Environment — AI agents fix broken SQL qu
 ---
 
-Check out the configuration reference at https://huggingface.co/docs/hub/spaces-config-reference
+# 🛠️ NetPulse: SRE Incident Response Benchmark
+**"A high-fidelity, deterministic SRE simulation environment for Autonomous AI Agents."**
 
-# 🚀 OpenEnv SQL Repair Environment
-
-[![Tests](https://img.shields.io/badge/tests-49%2F49%20passing-brightgreen)](#)
-[![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-311/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.1-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED.svg?logo=docker)](#)
-
-A fully **OpenEnv-compliant reinforcement learning environment** designed to test, evaluate, and train AI agents navigating the complexities of real-world Data Engineering.
-
-Unlike simple text-to-SQL benchmarks, the SQL Repair Environment challenges agents to deal with **dirty, malformed, and buggy tabular data.** To succeed, agents cannot just write a `SELECT` statement — they must iteratively investigate the schema, utilize atomic data-cleaning operations, drop nulls, cast columns, and manage table relationships *before* finalizing their complex queries.
-
-This is a complete, production-ready environment built for **HuggingFace Spaces** and advanced **Agentic RL benchmarks**.
+[![OpenEnv Compliant](https://img.shields.io/badge/OpenEnv-1.0-blueviolet?style=for-the-badge)](https://github.com/openenv/spec)
+[![Multi-Mode Deployment](https://img.shields.io/badge/Deployment-Multi--Mode-green?style=for-the-badge)](https://huggingface.co/docs/hub/spaces-sdks-docker)
+[![Deployed on HF](https://img.shields.io/badge/Deployed-Hugging%20Face-yellow?style=for-the-badge)](https://huggingface.co/spaces/chitt-hirpara/sql-repair-env)
 
 ---
 
-## 🌟 Key Features
+## 🎯 Project Overview
+**NetPulse** is a production-grade incident response simulator designed for the **OpenEnv Reinforcement Learning Benchmark**. Unlike generic "toy" environments (games, math, or simple web navigation), NetPulse models the high-stakes reality of **Site Reliability Engineering (SRE)**.
 
-*   **Multi-Step Data Engineering**: Agents interact with isolated, ephemeral SQLite engines. They have access to 7 environment actions (`submit_query`, `drop_nulls`, `drop_duplicates`, `rename_column`, `cast_column`, `clean_column`, `done`).
-*   **Three Tiered Tasks**: Covering everything from syntax typos to multi-table JOINs layered with duplicate records and schema anomalies.
-*   **Intelligent, Deterministic Graders**: Instead of a binary pass/fail score, the grading engine performs deep validation. It gives **Data Quality Scores**, partial credit for row matches, and extracts an **Efficiency Penalty** based on the number of wasted operations.
-*   **Chain-of-Thought (CoT) Baseline Agent**: Includes a state-of-the-art inference orchestrator (`inference.py`) capable of tackling tasks using a dynamically managed "Data Cleaner" and "SQL Writer" two-phase architecture.
-*   **Fast & Headless**: The `uvicorn` architecture supports parallel evaluation, zero-downtime resets, and fully deterministic step tracking.
+AI agents are placed in a live "NOC" (Network Operations Center) where they must diagnose cascading microservice failures, manage a limited infrastructure budget, and restore system health without crashing healthy components.
 
----
-
-## 🏗 Architecture & Stack 
-
-```text
-Backend: FastAPI, Pydantic, Python 3.11
-Database: Ephemeral in-memory SQLite instances
-Agent Inference: OpenAI SDK (Compatible with GPT-4, Gemini Flash, Claude)
-Testing: Pytest (49/49 passing integration suite)
-Deployment: Docker (Exposed on internal :7860)
+### 🏗️ System Architecture (Simulated Topology)
+```mermaid
+graph TD
+    User((User Traffic)) --> AGW[API Gateway]
+    AGW --> AS[Auth Service]
+    AGW --> PW[Payment Worker]
+    PW --> DB[(Database Replica)]
+    AGW --> CC[Cache Cluster]
+    NQ[Notification Queue] -.-> PW
 ```
 
 ---
 
-## 🎯 Task Breakdown
+## 🚀 Key Differentiators
 
-The environment currently hosts 3 progressively difficult tasks:
+> [!IMPORTANT]
+> **Real-World Utility (30% Weight):** Models authentic microservice failure patterns including **Backpressure Bottlenecks**, **Hidden Cascading Dependencies**, and **Alert Fatigue**.
 
-| Complexity | Tables | Data Anomalies | SQL Logic Errors | Max Allowed Steps |
-| :--- | :---: | :--- | :--- | :---: |
-| **Easy** (`task1`) | 1 | Clean dataset | Typo `SELCT`, wrong target column name | 5 |
-| **Medium** (`task2`) | 1 | Nulls, duplicates, bad column name (`amt`), invalid numeric types (`"N/A"`) | Wrong `WHERE` thresholds | 10 |
-| **Hard** (`task3`) | 3 | Multi-table nulls, duplicates in mapping tables, misspelled FK columns | Wrong aggregations (`AVG` instead of `SUM`), missing `ORDER BY` and `WHERE` criteria | 15 |
+*   **⚡ Deterministic Logic:** Every task variant (v1, v2, v3) is 100% deterministic, ensuring reproducible agent benchmarks across multiple runs.
+*   **⚖️ Multi-Dimensional Grading:** Graders don't just check "Did it work?". They analyze **SLA Stability**, **Budget Utilization**, and **Action Efficiency**.
+*   **📽️ Observability Dashboard:** Includes a minimalist React/Vite "War Room" dashboard for human verification of agent trajectories.
+*   **📦 OpenEnv Spec Native:** Strictly implements `POST /reset`, `POST /step`, `GET /state`, `GET /tasks`, `GET /score`, and `GET /health`.
+*   **🐍 Multi-Mode Compliance:** Fully compliant with Python-based OpenEnv validators using `pyproject.toml`, `uv.lock`, and a standard `server` entry point.
 
 ---
 
-## 🚀 Getting Started
+## 🧩 Benchmark Scenarios (Tasks)
 
-### 1. Run via Docker (Recommended)
-The environment is containerized for instant deployment. 
+The environment ships with 3 distinct grading difficulties producing a normalized final episode score between `0.0` and `1.0`:
+
+| Task | Difficulty | Pattern Modeled |
+| :--- | :--- | :--- |
+| `easy_signal_noise` | 🟢 Easy | Queue bottlenecks & Horizontal Scaling. |
+| `medium_hidden_dependency` | 🟡 Medium | Cascading failures & Latency propagation. |
+| `hard_multi_incident` | 🔴 Hard | Concurrent cluster anomalies & Budget management. |
+
+---
+
+## ⚖️ Scoring & Reward Function
+The `rewardEngine.js` provides granular trajectory signals (shaping) in the range of `[-1.0, 1.0]`. The final score is calculated using the following Meta-aligned weights:
+
+| Dimension | Weight | Metric |
+| :--- | :---: | :--- |
+| **System Stability** | 30% | Final Avg. Health vs. SLA Target |
+| **Harm Reduction** | 25% | Cumulative Customer Impact saved |
+| **Root Cause Resolution** | 25% | Binary check for core issue fix |
+| **Action Efficiency** | 10% | Steps used vs. Max allowed |
+| **Budget Utilization** | 5% | Infrastructure cost management |
+| **Safety Violation** | 5% | Penalty for "Reckless Rebooting" |
+
+---
+
+## 🎮 Action & Observation Space
+
+### Observation Space (`GET /state`)
+```json
+{
+  "system_health": 0.85,        // Normalized stability score
+  "customer_impact": 12.5,      // Downstream severity (Lower is better)
+  "remaining_budget": 1200,     // $ cost of cloud resources
+  "services": [...],            // Component telemetry (Latency, Errors, Health)
+  "active_alerts": [...]        // CloudWatch / Datadog simulants
+}
+```
+
+### Action Space (`POST /step`)
+Agents specify an `action` and a `target`:
+- `inspect_service`: Reveal hidden internal telemetry.
+- `inspect_dependency`: Trace downstream routing maps.
+- `restart_service`: Hard cycle a component (High Cost).
+- `throttle_queue`: Drop traffic to clear backpressure.
+- `rollback_deploy`: Revert a faulty deployment signature.
+- `scale_service`: Add horizontal instances to handle load.
+
+---
+
+## 🛠️ Setup & Local Execution
+
+### Option A: Python / UV (Recommended for Validators)
+The environment is compatible with `uv` and standard Python entry points:
 ```bash
-# Build the image
-docker build -t sql-repair-env .
+# Install dependencies
+uv sync
 
-# Run the environment on port 7860
-docker run -p 7860:7860 sql-repair-env
+# Start the environment server (Wraps Node.js backend)
+uv run server
 ```
 
-### 2. Run Locally
-Ensure you have Python 3.11+ installed.
+### Option B: Native Node.js Backend
+If you prefer running the core server directly:
 ```bash
-pip install -r requirements.txt
-
-# Boot the FastAPI Server
-uvicorn app.main:app --host 0.0.0.0 --port 7860
+cd server
+npm install
+npm start
 ```
 
-### 3. Verify Health
-To check the container health or see the OpenEnv standard `validate` endpoint:
+### 2. Boot Observability Dashboard (Port 5173)
 ```bash
-curl http://localhost:7860/validate
+cd client
+npm install
+npm run dev
 ```
+
+### 3. Agent Inference Logic
+To run the benchmark against an LLM (Default: `llama-3.3-70b-versatile` via Groq):
+```bash
+# Set OPENAI_API_KEY in .env
+python3 inference.py
+```
+*(Inference script emits strictly formatted logs: `[START]`, `[STEP]`, and `[END]` for evaluator scaling)*.
 
 ---
 
-## 🤖 Running the Baseline Agent
-
-We provide a highly advanced Inference Script (`inference.py`) to demonstrate how an LLM agent navigates the environment. It utilizes a **Two-Phase Architecture** (cleaning vs. writing) and **Chain-of-Thought** reasoning to dynamically act until `max_steps` are exhausted or the data is clean.
-
+## 🐳 Container Deployment (HF Spaces)
+Root contains a compliant `Dockerfile`. The space is configured as a `docker` SDK space but supports multi-mode interaction via the `server` entry point.
 ```bash
-# Export your preferred LLM Keys
-export MODEL_NAME="gemini-2.0-flash"
-export API_BASE_URL="https://generativelanguage.googleapis.com/v1beta/openai/"
-export OPENAI_API_KEY="your-api-key"
-
-# Run the agent against all Tasks
-python inference.py --task all
+docker build -t netpulse .
+docker run -p 7860:7860 netpulse
 ```
 
-**Baseline Performance:**
-The provided Gemini agent scores a perfect **1.0 average** across all three tasks, completely automating the Data Engineering fixes in under 6 steps per episode.
-
 ---
-
-## 🧪 Testing
-
-The codebase maintains strict reliability with a full Pytest integration suite that covers the HTTP endpoints, memory allocation, and the deterministic nature of the internal Graders.
-
-```bash
-python -m pytest tests/test_env.py -v
-```
-*`Result: 49 passed in 0.74s`*
-
----
-
-## 📖 API Spec (OpenEnv Standard)
-
-*   `POST /reset?task_id={task_id}` — Initializes a new in-memory SQLite environment, returning the observation state, instructions, and schemas.
-*   `POST /step` — Receives a JSON action payload containing the type (e.g., `rename_column`) and parameters. Mutates the SQLite memory and returns a dense `reward` dictionary and new `observation`.
-*   `GET /state` — Gives a highly detailed structural breakdown of all tables (row counts, null counts, datatypes).
-*   `GET /validate` — Validates environment compliance for Hugging Face Spaces integration.
+*Created for the Meta x Hugging Face Hackathon - NetPulse SRE Benchmark Environment.*
+*Authors: Chitt Hirpara*

@@ -1,0 +1,105 @@
+{
+  "name": "hard_multi_incident",
+  "difficulty": "hard",
+  "description": "Multiple simultaneous service failures. Limited budget forces prioritisation. Restarting auth_service appears tempting but causes a cascade making payment_worker worse. The true fix path is: rollback api_gateway deploy, then throttle payment_worker queue, then scale notification_queue.",
+  "max_steps": 40,
+  "initial_budget": 80,
+  "hidden_root_cause": "api_gateway",
+  "success_conditions": {
+    "min_system_health": 0.70,
+    "max_customer_impact": 35,
+    "root_cause_resolved": true
+  },
+  "services": [
+    {
+      "name": "auth_service",
+      "health": 0.55,
+      "latency": 380,
+      "error_rate": 0.18,
+      "queue_depth": 55,
+      "dependencies": []
+    },
+    {
+      "name": "api_gateway",
+      "health": 0.25,
+      "latency": 1500,
+      "error_rate": 0.62,
+      "queue_depth": 280,
+      "dependencies": ["auth_service"]
+    },
+    {
+      "name": "payment_worker",
+      "health": 0.40,
+      "latency": 1200,
+      "error_rate": 0.40,
+      "queue_depth": 190,
+      "dependencies": ["api_gateway", "database_replica"]
+    },
+    {
+      "name": "notification_queue",
+      "health": 0.35,
+      "latency": 750,
+      "error_rate": 0.30,
+      "queue_depth": 155,
+      "dependencies": ["api_gateway"]
+    },
+    {
+      "name": "database_replica",
+      "health": 0.70,
+      "latency": 180,
+      "error_rate": 0.10,
+      "queue_depth": 45,
+      "dependencies": []
+    },
+    {
+      "name": "analytics_pipeline",
+      "health": 0.60,
+      "latency": 450,
+      "error_rate": 0.15,
+      "queue_depth": 80,
+      "dependencies": ["database_replica"]
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-201",
+      "service": "auth_service",
+      "severity": "high",
+      "message": "Auth service degraded — latency 380ms, errors 18%. Restart may seem logical.",
+      "is_real": false
+    },
+    {
+      "id": "alert-202",
+      "service": "api_gateway",
+      "severity": "critical",
+      "message": "API Gateway critical — bad deploy detected. Error rate 62%, queue 280. Rollback needed.",
+      "is_real": true
+    },
+    {
+      "id": "alert-203",
+      "service": "payment_worker",
+      "severity": "critical",
+      "message": "Payment worker queue overflow at 190. Transactions failing. Throttle and stabilise.",
+      "is_real": true
+    },
+    {
+      "id": "alert-204",
+      "service": "notification_queue",
+      "severity": "high",
+      "message": "Notification queue backed up at 155. Scale required to drain backlog.",
+      "is_real": true
+    },
+    {
+      "id": "alert-205",
+      "service": "analytics_pipeline",
+      "severity": "medium",
+      "message": "Analytics pipeline slowed. Non-critical — downstream effect of gateway issues.",
+      "is_real": false
+    }
+  ],
+  "cascade_trap": {
+    "trigger_action": "restart_service",
+    "trigger_target": "auth_service",
+    "effect": "Restarting auth_service during active gateway failure causes payment_worker to lose authentication context, doubling its error rate and queue depth."
+  }
+}

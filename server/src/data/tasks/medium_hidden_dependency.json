@@ -1,0 +1,93 @@
+{
+  "name": "medium_hidden_dependency",
+  "difficulty": "medium",
+  "description": "The visible failure is payment_worker, but the true root cause is database_replica degradation. The agent must inspect dependencies to find the real issue before acting.",
+  "max_steps": 30,
+  "initial_budget": 75,
+  "hidden_root_cause": "database_replica",
+  "success_conditions": {
+    "min_system_health": 0.75,
+    "max_customer_impact": 30,
+    "root_cause_resolved": true
+  },
+  "services": [
+    {
+      "name": "auth_service",
+      "health": 0.88,
+      "latency": 50,
+      "error_rate": 0.02,
+      "queue_depth": 5,
+      "dependencies": []
+    },
+    {
+      "name": "api_gateway",
+      "health": 0.80,
+      "latency": 120,
+      "error_rate": 0.05,
+      "queue_depth": 18,
+      "dependencies": ["auth_service"]
+    },
+    {
+      "name": "payment_worker",
+      "health": 0.38,
+      "latency": 1800,
+      "error_rate": 0.52,
+      "queue_depth": 210,
+      "dependencies": ["api_gateway", "database_replica"]
+    },
+    {
+      "name": "notification_queue",
+      "health": 0.82,
+      "latency": 65,
+      "error_rate": 0.03,
+      "queue_depth": 30,
+      "dependencies": ["api_gateway"]
+    },
+    {
+      "name": "database_replica",
+      "health": 0.28,
+      "latency": 2400,
+      "error_rate": 0.60,
+      "queue_depth": 320,
+      "dependencies": []
+    },
+    {
+      "name": "analytics_pipeline",
+      "health": 0.72,
+      "latency": 300,
+      "error_rate": 0.08,
+      "queue_depth": 65,
+      "dependencies": ["database_replica"]
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-101",
+      "service": "payment_worker",
+      "severity": "critical",
+      "message": "Payment worker failure rate 52%. Transaction backlog at 210. Revenue at risk.",
+      "is_real": false
+    },
+    {
+      "id": "alert-102",
+      "service": "database_replica",
+      "severity": "high",
+      "message": "Database replica latency elevated at 2400ms. Query timeouts increasing.",
+      "is_real": true
+    },
+    {
+      "id": "alert-103",
+      "service": "analytics_pipeline",
+      "severity": "medium",
+      "message": "Analytics pipeline degraded — reports delayed. Likely downstream effect.",
+      "is_real": false
+    },
+    {
+      "id": "alert-104",
+      "service": "api_gateway",
+      "severity": "low",
+      "message": "API Gateway elevated latency 120ms. Monitoring for escalation.",
+      "is_real": false
+    }
+  ]
+}

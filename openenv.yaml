@@ -1,141 +1,79 @@
-name: sql-repair-environment
-version: "1.0.0"
+id: netpulse
+name: NetPulse SRE Incident Response Benchmark
+version: 1.0.0
 description: >
-  An OpenEnv environment where AI agents learn to fix broken SQL queries
-  and clean dirty tabular data. Covers three real-world data engineering
-  scenarios across easy, medium, and hard difficulty levels.
+  NetPulse is a deterministic incident response simulation environment for evaluating
+  LLM and agent reasoning in distributed system failures. Agents must diagnose root causes,
+  ignore noisy alerts, and recover system health under limited budget.
 
-author: openenv-hackathon
-tags:
-  - sql
-  - data-cleaning
-  - data-engineering
-  - openenv
+entrypoint:
+  type: rest
+  base_url: http://localhost:7860
 
-endpoints:
-  reset:    POST /reset
-  step:     POST /step
-  state:    GET  /state
-  validate: GET  /validate
+environment:
+  reset:
+    method: POST
+    path: /reset
+    body:
+      task_name: "{task_name}"
 
-action_space:
-  type: discrete
-  actions:
-    - name: submit_query
-      description: Submit a corrected SQL query string
-      required_fields: [query]
-    - name: drop_nulls
-      description: Drop rows where a specific column is null
-      required_fields: [column_name]
-      optional_fields: [table_name]
-    - name: drop_duplicates
-      description: Remove duplicate rows from a table
-      required_fields: []
-      optional_fields: [table_name]
-    - name: rename_column
-      description: Rename a column in a table
-      required_fields: [column_name, new_column_name]
-      optional_fields: [table_name]
-    - name: cast_column
-      description: Cast a column to a new data type (INTEGER, REAL, TEXT)
-      required_fields: [column_name, cast_to]
-      optional_fields: [table_name]
-    - name: clean_column
-      description: Fill or drop nulls in a column
-      required_fields: [column_name]
-      optional_fields: [table_name, fill_value]
-    - name: done
-      description: Signal that the agent has finished the task
-      required_fields: []
+  step:
+    method: POST
+    path: /step
+    body:
+      action: "{action}"
+      target: "{target}"
 
-observation_space:
-  type: structured
-  fields:
-    task_id:
-      type: string
-    difficulty:
-      type: string
-      enum: [easy, medium, hard]
-    goal:
-      type: string
-    instructions:
-      type: string
-    tables:
-      type: array
-    broken_query:
-      type: string
-    last_action_error:
-      type: string
-      nullable: true
-    last_query_result:
-      type: object
-      nullable: true
-    step_count:
-      type: integer
-    max_steps:
-      type: integer
-    current_score:
-      type: float
-    done:
-      type: boolean
+  state:
+    method: GET
+    path: /state
 
-reward_space:
-  type: float
-  range: [-1.0, 1.0]
-  fields:
-    step_reward:
-      range: [-1.0, 1.0]
-    total_reward:
-      range: [0.0, 1.0]
-    correctness_score:
-      range: [0.0, 1.0]
-    data_quality_score:
-      range: [0.0, 1.0]
-    efficiency_penalty:
-      range: [0.0, 1.0]
+  tasks:
+    method: GET
+    path: /tasks
+
+  score:
+    method: GET
+    path: /score
+
+  health:
+    method: GET
+    path: /health
 
 tasks:
-  - task_id: task1_easy
-    name: Fix SQL Syntax Error
-    difficulty: easy
-    max_steps: 5
-    description: >
-      A single 'employees' table exists with clean data. The provided SQL query
-      contains a keyword typo (SELCT) and a column name typo (deprtment).
-      The agent must submit a corrected query that returns the right rows.
-    grader: deterministic
-    score_range: [0.0, 1.0]
-    action_types: [submit_query, done]
+  - easy_signal_noise
+  - medium_hidden_dependency
+  - hard_multi_incident
 
-  - task_id: task2_medium
-    name: Clean Data and Fix Query Logic
-    difficulty: medium
-    max_steps: 10
-    description: >
-      An 'orders' table has null customer_name values, duplicate rows,
-      a misnamed column (amt instead of amount), and a non-numeric value.
-      The SQL query has a wrong WHERE threshold and wrong column reference.
-    grader: deterministic
-    score_range: [0.0, 1.0]
-    action_types: [drop_nulls, drop_duplicates, rename_column, cast_column, submit_query, done]
+observation_schema:
+  type: object
+  fields:
+    task_name: string
+    task_variant: string
+    task_description: string
+    step_count: integer
+    customer_impact: number
+    system_health: number
+    remaining_budget: number
+    recent_actions: array
+    services: array
+    alerts: array
 
-  - task_id: task3_hard
-    name: Multi-Table Join Repair
-    difficulty: hard
-    max_steps: 15
-    description: >
-      Three tables (customers, products, transactions) with schema errors,
-      null values, duplicates, and a complex SQL query with wrong JOIN keys,
-      wrong aggregation (AVG vs SUM), wrong HAVING threshold, and wrong ORDER BY.
-    grader: deterministic
-    score_range: [0.0, 1.0]
-    action_types: [drop_nulls, drop_duplicates, rename_column, cast_column, submit_query, done]
+action_schema:
+  type: object
+  fields:
+    action: string
+    target: string?
 
-infrastructure:
-  port: 7860
-  framework: fastapi
-  language: python
-  python_version: "3.11"
-  runtime: uvicorn
-  max_memory_mb: 512
-  max_vcpu: 2
+termination:
+  done_field: done
+  success_field: success
+
+reward:
+  field: reward
+  score_endpoint: /score
+
+notes:
+  - Same task may contain multiple deterministic scenario variants (v1, v2, v3).
+  - Environment is deterministic per task variant.
+  - Agents are evaluated on efficiency, root cause resolution, and harmful action avoidance.

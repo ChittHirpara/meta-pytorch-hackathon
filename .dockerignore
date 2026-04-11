@@ -1,0 +1,10 @@
+node_modules
+venv
+.git
+.gitignore
+client/node_modules
+server/node_modules
+client/dist
+__pycache__
+*.log
+.DS_Store

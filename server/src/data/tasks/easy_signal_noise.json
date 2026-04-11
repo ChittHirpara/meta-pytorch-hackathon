@@ -1,0 +1,86 @@
+{
+  "name": "easy_signal_noise",
+  "difficulty": "easy",
+  "description": "One real incident hidden among two noisy misleading alerts. Identify and resolve the real issue efficiently without wasting budget on false positives.",
+  "max_steps": 20,
+  "initial_budget": 60,
+  "hidden_root_cause": "api_gateway",
+  "success_conditions": {
+    "min_system_health": 0.75,
+    "max_customer_impact": 25,
+    "root_cause_resolved": true
+  },
+  "services": [
+    {
+      "name": "auth_service",
+      "health": 0.92,
+      "latency": 45,
+      "error_rate": 0.01,
+      "queue_depth": 3,
+      "dependencies": []
+    },
+    {
+      "name": "api_gateway",
+      "health": 0.32,
+      "latency": 920,
+      "error_rate": 0.45,
+      "queue_depth": 134,
+      "dependencies": ["auth_service"]
+    },
+    {
+      "name": "payment_worker",
+      "health": 0.88,
+      "latency": 80,
+      "error_rate": 0.02,
+      "queue_depth": 12,
+      "dependencies": ["api_gateway", "database_replica"]
+    },
+    {
+      "name": "notification_queue",
+      "health": 0.85,
+      "latency": 55,
+      "error_rate": 0.03,
+      "queue_depth": 22,
+      "dependencies": ["api_gateway"]
+    },
+    {
+      "name": "database_replica",
+      "health": 0.90,
+      "latency": 38,
+      "error_rate": 0.01,
+      "queue_depth": 5,
+      "dependencies": []
+    },
+    {
+      "name": "analytics_pipeline",
+      "health": 0.86,
+      "latency": 200,
+      "error_rate": 0.04,
+      "queue_depth": 40,
+      "dependencies": ["database_replica"]
+    }
+  ],
+  "alerts": [
+    {
+      "id": "alert-001",
+      "service": "api_gateway",
+      "severity": "critical",
+      "message": "API Gateway error rate spiked to 45%. Requests timing out. Queue at 134.",
+      "is_real": true
+    },
+    {
+      "id": "alert-002",
+      "service": "notification_queue",
+      "severity": "high",
+      "message": "Notification queue depth elevated at 22. Suspected throughput lag.",
+      "is_real": false
+    },
+    {
+      "id": "alert-003",
+      "service": "analytics_pipeline",
+      "severity": "medium",
+      "message": "Analytics pipeline latency at 200ms. Possible data lag downstream.",
+      "is_real": false
+    }
+  ]
+}

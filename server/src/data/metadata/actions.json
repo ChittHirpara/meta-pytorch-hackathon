@@ -1,0 +1,67 @@
+{
+  "valid_actions": [
+    {
+      "name": "inspect_service",
+      "description": "Observe detailed metrics for a specific service. Required before diagnosis.",
+      "requires_target": true,
+      "budget_cost": 1,
+      "category": "diagnostic"
+    },
+    {
+      "name": "inspect_dependency",
+      "description": "Inspect the dependency chain of a service. Reveals hidden upstream issues.",
+      "requires_target": true,
+      "budget_cost": 1,
+      "category": "diagnostic"
+    },
+    {
+      "name": "restart_service",
+      "description": "Hard restart a service. Clears state but may cause temporary outage and cascades.",
+      "requires_target": true,
+      "budget_cost": 10,
+      "category": "remediation"
+    },
+    {
+      "name": "scale_service",
+      "description": "Horizontally scale a service to reduce queue depth and latency under load.",
+      "requires_target": true,
+      "budget_cost": 15,
+      "category": "remediation"
+    },
+    {
+      "name": "rollback_deploy",
+      "description": "Roll back the most recent deployment of a service. Resolves bad deploys.",
+      "requires_target": true,
+      "budget_cost": 12,
+      "category": "remediation"
+    },
+    {
+      "name": "reroute_traffic",
+      "description": "Reroute traffic away from a degraded service to healthy replicas.",
+      "requires_target": true,
+      "budget_cost": 8,
+      "category": "mitigation"
+    },
+    {
+      "name": "throttle_queue",
+      "description": "Throttle incoming queue for a service to prevent overload and reduce backlog.",
+      "requires_target": true,
+      "budget_cost": 5,
+      "category": "mitigation"
+    },
+    {
+      "name": "silence_alert",
+      "description": "Silence a noisy alert. Useful for noise reduction — does not fix the underlying issue.",
+      "requires_target": false,
+      "budget_cost": 2,
+      "category": "administrative"
+    },
+    {
+      "name": "noop",
+      "description": "Take no action. Useful only when gathering information. Penalised if overused.",
+      "requires_target": false,
+      "budget_cost": 0,
+      "category": "administrative"
+    }
+  ]
+}

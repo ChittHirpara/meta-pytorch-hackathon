@@ -1,0 +1,10 @@
+#!/bin/sh
+# Super portable python shim for TRIAGE-X Benchmark
+# Ensures 'python' command maps to 'python3' and handles non-zero exits correctly.
+
+if command -v python3 >/dev/null 2>&1; then
+    exec python3 "$@"
+else
+    echo "ERROR: python3 not found in PATH." >&2
+    exit 127
+fi
